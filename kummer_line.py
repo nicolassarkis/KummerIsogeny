@@ -6,20 +6,6 @@ Kummer Points used for x-only Montgomery curve arithmetic
 
 INFO: Construction
 
-A KummerLine can be constructed straight from a Montgomery curve:
-
-E = EllipticCurve(F, [0,A,0,1,0])
-K = KummerLine(E)
-
-Or, it can be constructed from the Montgomery coefficient
-
-K = KummerLine(F, A)
-
-Additionally, we allow A = (A : C) to be stored projectively and
-we can construct this by
-
-K = KummerLine(F, [A, C])
-
 A KummerPoint can be constructed from coordinates
 
 xP = K(X, Z)
@@ -55,6 +41,45 @@ xP.multiples() generates values [l]xP by repeated differential addition. This
 is used for isogeny computations where we want to collect the the first d points
 for an isogeny of degree ell = 2d+1. 
 """
+
+r"""
+Kummer Line class for short Weierstrass elliptic curves
+
+<Paragraph description>
+
+EXAMPLES:
+
+We construct a Kummer line over an already defined elliptic curve in short Weierstrass form::
+
+    sage: E = EllipticCurve(GF(101), [2, 3])
+    sage: KummerLine(E)
+    Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+We can also give the curve coefficients directly with a base ring::
+
+    sage: KummerLine(QQ, [4, 5/6])
+    Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
+
+TODO KummerPoint examples
+
+AUTHORS:
+
+- YOUR NAME (2005-01-03): initial version
+
+- person (date in ISO year-month-day format): short desc
+
+"""
+
+# ****************************************************************************
+#       Copyright (C) 2013 YOUR NAME <your email>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 2 of the License, or
+# (at your option) any later version.
+#                  https://www.gnu.org/licenses/
+# ****************************************************************************
+
 import cypari2
 
 pari = cypari2.Pari()
@@ -71,18 +96,63 @@ from sage.schemes.elliptic_curves.ell_point import EllipticCurvePoint_field
 
 
 class KummerLine_weierstrass:
+    r"""
+    Kummer line class for a short Weierstrass elliptic curve
+
+    EXAMPLES::
+
+        A KummerLine can be constructed straight from a short Weierstrass curve:
+        sage: E = EllipticCurve(GF(101), [2, 3])
+        sage: KummerLine(E)
+        Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+        Or, it can be constructed from the curve coefficients a and b, in which \
+        case a base ring must be specified
+        sage: KummerLine(QQ, [4, 5/6])
+        Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
+    """
+
     def __init__(self, *args):
+        r"""
+        Construct a Kummer line from short Weierstrass coefficients or an elliptic curve
+        shaped that way.
+
+        INPUT::
+
+            One of these two work:
+
+            - ``E`` -- an EllipticCurve object in short Weierstrass form (y^2 = x^3 + a*x + b)
+
+            OR
+
+            - ``K`` -- a ring
+
+            - ``[a, b]`` -- list or tuple of short Weierstrass curve coefficients
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: KummerLine(E)
+            Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+            sage: KummerLine(QQ, [4, 5/6])
+            Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
+
+        The base ring need not be a field::
+
+            sage: KummerLine(IntegerModRing(15), [4, 7])
+            Kummer line of the elliptic curve y^2 = x^3 + 4*x + 7 over Ring of integers modulo 15
+        """
         self._curve = None
 
-        # Allow the creation of the Kummer Line from an EllipticCurve
+        # Allow the creation of the Kummer line from an EllipticCurve
         if len(args) == 1:
             (curve,) = args
             if not isinstance(curve, EllipticCurve_generic):
-                raise TypeError("not an elliptic curve")
+                raise TypeError("E is not an elliptic curve.")
             ainvs = curve.a_invariants()
             a, b = ainvs[3], ainvs[4]
             if ainvs != (0, 0, 0, a, b):
-                raise ValueError("Must use short Weierstrass model")
+                raise ValueError("Must use short Weierstrass model.")
             self._curve = curve
             self._base_ring = curve.base_ring()
 
@@ -101,89 +171,213 @@ class KummerLine_weierstrass:
         else:
             raise ValueError(
                 "A Kummer Line must be constructed from either a short Weierstrass curve, or\
-                    a base field and tuple representing the coefficients [a, b]"
+                    a base field and tuple representing the coefficients [a, b]."
             )
 
         # init variables
         self._a = self._base_ring(a)
         self._b = self._base_ring(b)
-        self._b2 = self._b + self._b
-        self._b4 = self._b2 + self._b2
+        # self._b2 = self._b + self._b
+        # self._b4 = self._b2 + self._b2
         self._a, self._b = pari(self._a), pari(self._b)
-        self._b2, self._b4 = pari(self._b2), pari(self._b4)
+        # self._b2, self._b4 = pari(self._b2), pari(self._b4)
 
         # Make sure the curve is not singular
-        if (4 * self._a**3 + 27 * self._b**2) == 0:
+        if self.discriminant() == 0:
             raise ValueError(
-                f"Constants {curve_constants} do not define a Montgomery curve"
+                f"Constants {curve_constants} do not define an elliptic curve in short \
+                Weierstrass form."
             )
 
     def __eq__(self, other):
+        r"""
+        Test equality of Kummer lines by checking if the coefficients are the same.
+
+        EXAMPLES::
+
+            sage: KummerLine(QQ, [3, 4]) == KummerLine(QQ, [2, 3])
+            False
+
+            sage: KummerLine(QQ, [3, 4]) == KummerLine(QQ, [3, 4])
+            True
+
+        Base ring must be the same::
+            sage: KummerLine(QQ, [3, 4]) == KummerLine(GF(7), [3, 4])
+            False
         """
-        Test equality of two curves
-        """
+
         if self.base_ring() != other.base_ring():
             return False
         return self._a == other._a and self._b == other._b
 
     def __repr__(self):
+        r"""
+        String representation of a Kummer line.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E); K.__repr__()
+            'Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101'
+
+            sage: K = KummerLine(QQ, [4, 5/6]); K.__repr__()
+            'Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field'
         """
-        String representation of the class
-        """
-        return f"Kummer line of the elliptic curve y^2 = x^3 + {self._a}*x + {self._b} over {self.base_ring()}"
+
+        return f"Kummer line of the elliptic curve y^2 = x^3 + {self._a.sage()}*x + {self._b.sage()} over {self.base_ring()}"
 
     def __call__(self, coords):
-        """
-        Create a Kummer Point with this Kummer Line as the parent
+        r"""
+        Create a point from the coordinates.
+
+        INPUT::
+
+            - ``coords`` - either a point P on EllipticCurve or a list or tuple (X, Z) where P = (X : * : Z); Z is optional
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+
+        Point as a parameter::
+            sage: K(P)
+            Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+        Same output if we just give the XZ-coordinates::
+            sage: K([95, 1]) == K(P)
+            True
+
+        Z is optional::
+            sage: K(95) == K(P)
+            True
+
+            sage: K([95]) == K(P)
+            True
         """
         return KummerPoint_weierstrass(self, coords)
 
     def base_ring(self):
-        """
-        Return the base ring of the Kummer Line
+        r"""
+        Return the base ring of the Kummer Line.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: K.base_ring()
+            Finite Field of size 101
         """
         return self._base_ring
 
     def extract_constants(self):
+        r"""
+        Return the curve coefficients a, b as a tuple.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E)
+            sage: K.extract_constants()
+            (2, 3)
         """
-        Return the curve coefficients a, b as a tuple
-        """
+        # TODO should the example reflect that a and b are PARI elements?
         return self._a, self._b
 
     def zero(self):
-        """
-        Return the identity point on the Kummer Line
+        r"""
+        Return the identity point on the Kummer Line.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E)
+            sage: K.zero()
+            Kummer Point [1 : 0] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
         """
         return self(None)
 
     def curve(self):
-        """
+        r"""
         Lift the Kummer Line to an elliptic curve as a
-        SageMath EllipticCurve
+        SageMath EllipticCurve.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E)
+            sage: K.curve() == E
+            True
+
+            sage: K = KummerLine(QQ, [3, 4/5])
+            sage: K.curve()
+            Elliptic Curve defined by y^2 = x^3 + 3*x + 4/5 over Rational Field
         """
+
         if not self._curve:
             self._curve = self.short_weierstrass_curve()
         return self._curve
 
     @cached_method
     def short_weierstrass_curve(self):
-        """
-        Return the short Weierstrass curve associated with the Kummer Line
-        """
-        F = self.base_ring()
+        r"""
+        Return the short Weierstrass curve associated with the Kummer line.
 
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E)
+            sage: K.short_weierstrass_curve() == E
+            True
+
+            sage: K = KummerLine(QQ, [3, 4/5])
+            sage: K.short_weierstreass_curve()
+            Elliptic Curve defined by y^2 = x^3 + 3*x + 4/5 over Rational Field
+        """
+
+        F = self.base_ring()
         return EllipticCurve(F, [self._a, self._b])
 
     @cached_method
     def j_invariant(self):
-        """
-        Compute the j-invariant of the Kummer Line
+        r"""
+        Compute the j-invariant of the Kummer line using the formula `j(E) = 1728\frac{4a^3}{4a^3 + 27b^2}`.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(j=42)
+            sage: K = KummerLine(E)
+            sage: K.j_invariant() == 42
+            True
+
+            sage: K = KummerLine(GF(101), [2, 3])
+            sage: K.j_invariant()
+            74
         """
 
         j_num = 4 * self._a**3
         j_den = j_num + 27 * self._b**2
         j_num = 1728 * j_num
         return j_num / j_den
+
+    @cached_method
+    def discriminant(self):
+        r"""
+        Compute the discriminant of the Kummer line using the formula `\Delta(E) = -16(4a^3 + 27b^2)`.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(j=42)
+            sage: K = KummerLine(E)
+            sage: K.discriminant()
+            -541067272574976
+
+            sage: K = KummerLine(GF(101), [2, 3])
+            sage: K.discriminant()
+            44
+        """
+        return -16 * (4 * self._a**3 + 27 * self._b**2)
 
 
 class KummerLine_montgomery:
@@ -374,7 +568,7 @@ class KummerPoint_weierstrass:
         self._X, self._Z = coords
 
     def __repr__(self):
-        return f"Kummer Point [{self._X} : {self._Z}] on {self._parent}"
+        return f"Kummer Point [{self._X.sage()} : {self._Z.sage()}] on {self._parent}"
 
     def __bool__(self):
         """
@@ -700,7 +894,7 @@ class KummerPoint_weierstrass:
 
     def ladder_3_pt(self, xP, xPQ, m):
         """
-        Function to compute xP + [m]xQ using x-only
+        Function to compute x(P + [m]Q) using x-only
         arithmetic. Very similar to the Montgomery ladder above
 
         Note: self = xQ

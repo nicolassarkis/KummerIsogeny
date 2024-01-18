@@ -26,3 +26,11 @@ print(E.j_invariant() == K.j_invariant())
 
 R = n * KP
 print((n * P)[0] == R.x())
+
+print("-------------")
+
+F = GF(101)
+E = EllipticCurve(j=F(42))
+# P = E.random_point()
+K = KummerLine_weierstrass(F, [2, 3])
+print(K.discriminant())
