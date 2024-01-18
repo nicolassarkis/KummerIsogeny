@@ -1,4 +1,4 @@
-from kummer_line import KummerLine_weierstrass
+from kummer_line import KummerLine
 from sage.all import EllipticCurve, GF
 
 p = 65537
@@ -7,7 +7,7 @@ F = GF(p)
 E = EllipticCurve(F, [3, 4])
 P = E.random_point()
 Q = E.random_point()
-K = KummerLine_weierstrass(E)
+K = KummerLine(E)
 KP = K(P)
 KQ = K(Q)
 KPQ = K(P - Q)
@@ -32,5 +32,5 @@ print("-------------")
 F = GF(101)
 E = EllipticCurve(j=F(42))
 # P = E.random_point()
-K = KummerLine_weierstrass(F, [2, 3])
+K = KummerLine(F, [2, 3])
 print(K.discriminant())
