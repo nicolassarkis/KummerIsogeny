@@ -23,44 +23,59 @@ def compare_isogeny(P, Q, xP, xQ, order):
     E = P.curve()
     L = xP.parent()
 
-    print_info(f"Computing isogenies of degree:\n{order.factor()}")
+    # print_info(f"Computing isogenies of degree:\n{order.factor()}")
 
     # Time naive SageMath isogeny evaluation
     t0 = time.time()
     psi = E.isogeny(P, algorithm="factored")
-    print(f"Naive SageMath codomain computation: {time.time() - t0:.5f}")
-    print(psi.codomain())
+    # print(f"Naive SageMath codomain computation: {time.time() - t0:.5f}")
+    E2 = psi.codomain()
+    a2, b2 = E2.ainvs()[-2:]
+    # print(E2)
     t0 = time.time()
-    print(psi(Q))
-    print(f"Naive SageMath point evaluation: {time.time() - t0:.5f}\n")
+    # print(Q)
+    psiQ = psi(Q)
+    # print(psiQ)
+    # print(f"Naive SageMath point evaluation: {time.time() - t0:.5f}\n")
 
     # Time optimisation with sparse strategy and velusqrt
     t0 = time.time()
     sigma = EllipticCurveIsogenyFactored(E, P, order=order)
-    print(f"Optimised SageMath codomain computation: {time.time() - t0:.5f}")
+    # print(f"Optimised SageMath codomain computation: {time.time() - t0:.5f}")
     t0 = time.time()
     sigma(Q)
-    print(f"Optimised SageMath point evaluation: {time.time() - t0:.5f}\n")
+    # print(f"Optimised SageMath point evaluation: {time.time() - t0:.5f}\n")
 
     # Time x-only formula using KummerLine and KummerIsogeny classes
     # S = [i * P for i in range(P.order())]
     S = [P]
-    for _ in range(order - 2):
+    for _ in range(ceil((order - 1) / 2) - 1):
         S += [S[-1] + P]
-    print(order)
-    print(len(S))
-    S = S[: ceil(len(S) / 2)]
-    print(len(S))
+    # print(len(S))
+    # S = S[: ceil(len(S) / 2)]
+    # print(len(S))
 
-    print("kernel computed")
+    # print("kernel computed")
     t0 = time.time()
     # # phi = KummerLineIsogeny(L, xP, order)
     KS = [L(iP) for iP in S]
     # KS = KS[: ceil(len(KS) / 2)]
-    print(L.isogeny(KS, xQ))
+    K2, xR = L.isogeny(KS, xQ)
     # t0 = time.time()
-    print(f"KummerLine codomain computation: {time.time() - t0:.5f}")
-    # print(f"KummerLine point evaluation: {time.time() - t0:.5f}\n")
+    # print(f"KummerLine codomain computation: {time.time() - t0:.5f}")
+    a, b = K2.extract_constants()
+    ans = a == a2 and b == b2 and xR.x() == psiQ[0]
+    if not ans:
+        print(E)
+        print(P, order)
+        print(Q, Q.order())
+        print(E.order() / order)
+        print("------")
+        print(E2)
+        print(K2)
+        print(psiQ)
+        print(xR)
+    return ans
 
 
 def compare_isogeny_factors(P, Q, xP, xQ, order):

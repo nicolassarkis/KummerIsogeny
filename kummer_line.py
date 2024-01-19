@@ -384,7 +384,12 @@ class KummerLine:
         for Q in S:
             XQ, _ZQ = Q.XZ()
             gQx = 3 * XQ**2 + a4
-            if 2 * Q == self.zero():
+            # if Q.double() == self.zero():
+            if Q.double() == self.zero():
+                # # print((2 * Q).x(), (Q.double().x()))
+                # print(type(2 * Q), 2 * Q)
+                # print(type(Q.double()), Q.double())
+                # print(Q)
                 vQ = gQx
             else:
                 vQ = 2 * gQx

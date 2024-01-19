@@ -41,19 +41,52 @@ from benchmark_utils import compare_isogeny
 p = 65537
 F = GF(p)
 
-A = F.random_element()
-B = F.random_element()
-E = EllipticCurve(F, [A, B])
-K = KummerLine(E)
-N = E.order()
-k = N.divisors()[1:][randint(0, len(N.divisors()) - 2)]
+c = 0
+flag = True
 
-P0 = E.gens()[0]
-P = N / k * P0
-assert P.order() == k
+while c < 2000 and flag:
+    A = F.random_element()
+    B = F.random_element()
+    E = EllipticCurve(F, [A, B])
+    N = E.order()
 
-Q = E.random_point()
-xP = K(P)
-xQ = K(Q)
+    P0 = E.gens()[0]
+    while P0.order() == N:
+        A = F.random_element()
+        B = F.random_element()
+        E = EllipticCurve(F, [A, B])
+        N = E.order()
+        P0 = E.gens()[0]
 
-compare_isogeny(P, Q, xP, xQ, k)
+    K = KummerLine(E)
+    k = P0.order().divisors()[1:][randint(0, len(P0.order().divisors()) - 2)]
+    P = P0.order() / k * P0
+    assert P.order() == k
+
+    ker = [E(0)]
+    for _ in range(P.order() - 1):
+        ker += [ker[-1] + P]
+
+    Q = E.random_point()
+    while Q in ker:
+        Q = E.random_point()
+    xP = K(P)
+    xQ = K(Q)
+
+    flag = compare_isogeny(P, Q, xP, xQ, k)
+    c += 1
+    if c % 100 == 0:
+        print(c)
+
+# A = F.random_element()
+# B = F.random_element()
+# E = EllipticCurve(F, [A, B])
+# P = E.random_point()
+# K = KummerLine(E)
+# xP = K(P)
+#
+# print(P)
+# print(2 * P)
+# print(xP)
+# print(2 * xP)
+# print(xP.double())
