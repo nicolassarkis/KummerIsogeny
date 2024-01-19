@@ -374,7 +374,7 @@ class KummerLine:
         a, b = self.extract_constants()
         return -16 * (4 * a**3 + 27 * b**2)
 
-    def iso_velu(self, S, P):
+    def isogeny(self, S, P):
         XP, _ZP = P.XZ()
         a4, a6 = self.extract_constants()
         if self.zero() in S:

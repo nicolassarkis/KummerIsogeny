@@ -57,7 +57,7 @@ def compare_isogeny(P, Q, xP, xQ, order):
     # # phi = KummerLineIsogeny(L, xP, order)
     KS = [L(iP) for iP in S]
     # KS = KS[: ceil(len(KS) / 2)]
-    print(L.iso_velu(KS, xQ))
+    print(L.isogeny(KS, xQ))
     # t0 = time.time()
     print(f"KummerLine codomain computation: {time.time() - t0:.5f}")
     # print(f"KummerLine point evaluation: {time.time() - t0:.5f}\n")
