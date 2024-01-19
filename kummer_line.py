@@ -6,7 +6,6 @@ Kummer Points used for x-only Montgomery curve arithmetic
 
 INFO: Construction
 
-A KummerPoint can be constructed from coordinates
 
 xP = K(X, Z)
 
@@ -97,13 +96,13 @@ class KummerLine:
 
     EXAMPLES::
 
-        A KummerLine can be constructed straight from a short Weierstrass curve:
+    A KummerLine can be constructed straight from a short Weierstrass curve::
         sage: E = EllipticCurve(GF(101), [2, 3])
         sage: KummerLine(E)
         Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
 
-        Or, it can be constructed from the curve coefficients a and b, in which \
-        case a base ring must be specified
+    Or, it can be constructed from the curve coefficients a and b, in which
+    case a base ring must be specified::
         sage: KummerLine(QQ, [4, 5/6])
         Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
     """
@@ -375,9 +374,79 @@ class KummerLine:
         a, b = self.extract_constants()
         return -16 * (4 * a**3 + 27 * b**2)
 
+    def iso_velu(self, S, P):
+        XP, _ZP = P.XZ()
+        a4, a6 = self.extract_constants()
+        if self.zero() in S:
+            S.remove(self.zero())
+        v, w = 0, 0
+        alpha = XP
+        for Q in S:
+            XQ, _ZQ = Q.XZ()
+            gQx = 3 * XQ**2 + a4
+            if 2 * Q == self.zero():
+                vQ = gQx
+            else:
+                vQ = 2 * gQx
+            uQ = 4 * (XQ**3 + a4 * XQ + a6)
+            v += vQ
+            w += uQ + XQ * vQ
+            alpha += vQ / (XP - XQ) + uQ / (XP - XQ) ** 2
+        A4 = a4 - 5 * v
+        A6 = a6 - 7 * w
+        K2 = KummerLine(self.base_ring(), [A4, A6])
+        return K2, K2(alpha.sage())
+
 
 class KummerPoint:
+    r"""
+    Kummer line point class
+
+    EXAMPLES::
+
+        sage: E = EllipticCurve(GF(101), [2, 3])
+        sage: K = KummerLine(E)
+        sage: P = E(95, 52)
+
+    A KummerPoint can be constructed from coordinates::
+        sage: xP = K([95, 1])
+        Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+    Or, it can be constructed from the curve coefficients a and b, in which
+    case a base ring must be specified::
+        sage: KummerLine(QQ, [4, 5/6])
+        Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
+    """
+
     def __init__(self, parent, coords):
+        r"""
+        Create a point from the coordinates.
+
+        INPUT::
+
+            - ``coords`` - either a point P on EllipticCurve or a list or tuple (X, Z) where P = (X : * : Z); Z is optional
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+
+        Point as a parameter::
+            sage: K(P)
+            Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+        Same output if we just give the XZ-coordinates::
+            sage: K([95, 1]) == K(P)
+            True
+
+        Z is optional::
+            sage: K(95) == K(P)
+            True
+
+            sage: K([95]) == K(P)
+            True
+        """
         # Ensure the parent is the right type
         if not isinstance(parent, KummerLine):
             raise TypeError("not a Weierstrass Kummer line")

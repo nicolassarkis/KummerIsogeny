@@ -4,10 +4,10 @@ import time
 from kummer_isogeny import (
     KummerLineIsogeny_Velu,
     KummerLineIsogeny_VeluSqrt,
-    KummerLineIsogeny,
 )
 
 from utilities import EllipticCurveIsogenyFactored, print_info
+from sage.all import ceil
 
 
 def compare_isogeny(P, Q, xP, xQ, order):
@@ -29,8 +29,9 @@ def compare_isogeny(P, Q, xP, xQ, order):
     t0 = time.time()
     psi = E.isogeny(P, algorithm="factored")
     print(f"Naive SageMath codomain computation: {time.time() - t0:.5f}")
+    print(psi.codomain())
     t0 = time.time()
-    psi(Q)
+    print(psi(Q))
     print(f"Naive SageMath point evaluation: {time.time() - t0:.5f}\n")
 
     # Time optimisation with sparse strategy and velusqrt
@@ -42,12 +43,24 @@ def compare_isogeny(P, Q, xP, xQ, order):
     print(f"Optimised SageMath point evaluation: {time.time() - t0:.5f}\n")
 
     # Time x-only formula using KummerLine and KummerIsogeny classes
+    # S = [i * P for i in range(P.order())]
+    S = [P]
+    for _ in range(order - 2):
+        S += [S[-1] + P]
+    print(order)
+    print(len(S))
+    S = S[: ceil(len(S) / 2)]
+    print(len(S))
+
+    print("kernel computed")
     t0 = time.time()
-    phi = KummerLineIsogeny(L, xP, order)
+    # # phi = KummerLineIsogeny(L, xP, order)
+    KS = [L(iP) for iP in S]
+    # KS = KS[: ceil(len(KS) / 2)]
+    print(L.iso_velu(KS, xQ))
+    # t0 = time.time()
     print(f"KummerLine codomain computation: {time.time() - t0:.5f}")
-    t0 = time.time()
-    phi(xQ)
-    print(f"KummerLine point evaluation: {time.time() - t0:.5f}\n")
+    # print(f"KummerLine point evaluation: {time.time() - t0:.5f}\n")
 
 
 def compare_isogeny_factors(P, Q, xP, xQ, order):
