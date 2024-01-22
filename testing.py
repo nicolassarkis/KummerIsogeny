@@ -1,6 +1,7 @@
-from kummer_line import KummerLine
-from sage.all import EllipticCurve, GF, randint
-from benchmark_utils import compare_isogeny
+from kummer_line import KummerLine  # noqa
+from sage.all import EllipticCurve, GF, randint  # noqa
+from benchmark_utils import compare_isogeny  # noqa
+
 
 # p = 65537
 # F = GF(p)
@@ -81,9 +82,30 @@ while c < 2000 and flag:
 # A = F.random_element()
 # B = F.random_element()
 # E = EllipticCurve(F, [A, B])
-# P = E.random_point()
+# if E.order() % 2 == 0:
+#     print("allo")
+#     P = E.gens()[0]
+#     P = P.order() / 2 * P
+#     assert P.order() == 2
+# else:
+#     P = E.random_point()
+# Q = E.random_point()
 # K = KummerLine(E)
-# xP = K(P)
+# xP, xQ, xPQ = K(P), K(Q), K(P - Q)
+# print(P, xP.x())
+# print(Q, xQ.x())
+# print(P - Q, xPQ.x())
+#
+# dbl = xP.xDBL(xP.x(), 1, A, 2 * B, 4 * B)
+# print(dbl[1] == 0)
+#
+# add = xP.xADD(xP.x(), 1, xQ.x(), 1, xPQ.x(), 1, A, B)
+# print((P + Q) == add[0] / add[1])
+#
+# dbladd = xP.xDBLADD(xP.x(), 1, xQ.x(), 1, xPQ.x(), 1, A, 4 * B)
+# print(dbladd[1] == 0, dbladd[2] / dbladd[3] == add[0] / add[1])
+#
+# print((2 * xP).is_zero())
 #
 # print(P)
 # print(2 * P)

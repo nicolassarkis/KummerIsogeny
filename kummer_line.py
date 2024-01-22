@@ -63,14 +63,14 @@ TODO KummerPoint examples
 
 AUTHORS:
 
-- YOUR NAME (2005-01-03): initial version
+- Giacomo Pope (2023): original code
 
-- person (date in ISO year-month-day format): short desc
+- Elif Özbay Gürler, Nicolas Sarkis (2024-01): adapated code to short Weierstrass and documentation
 
 """
-
+# TODO copyright?
 # ****************************************************************************
-#       Copyright (C) 2013 YOUR NAME <your email>
+#       Copyright (C) 2023 Giacomo Pope <giacomopope@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -375,6 +375,7 @@ class KummerLine:
         return -16 * (4 * a**3 + 27 * b**2)
 
     def isogeny(self, S, P):
+        # TODO
         XP, _ZP = P.XZ()
         a4, a6 = self.extract_constants()
         if self.zero() in S:
@@ -385,11 +386,12 @@ class KummerLine:
             XQ, _ZQ = Q.XZ()
             gQx = 3 * XQ**2 + a4
             # if Q.double() == self.zero():
-            if Q.double() == self.zero():
+            # if 2 * Q == self.zero(): # broken
+            if (2 * Q).is_zero():
                 # # print((2 * Q).x(), (Q.double().x()))
                 # print(type(2 * Q), 2 * Q)
-                # print(type(Q.double()), Q.double())
-                # print(Q)
+                print(Q.double(), Q.double().is_zero())
+                print(2 * Q, (2 * Q).is_zero())
                 vQ = gQx
             else:
                 vQ = 2 * gQx
@@ -414,13 +416,20 @@ class KummerPoint:
         sage: P = E(95, 52)
 
     A KummerPoint can be constructed from coordinates::
-        sage: xP = K([95, 1])
+        sage: xP = KummerPoint(K, [95, 1]); xP
         Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
 
-    Or, it can be constructed from the curve coefficients a and b, in which
-    case a base ring must be specified::
-        sage: KummerLine(QQ, [4, 5/6])
-        Kummer line of the elliptic curve y^2 = x^3 + 4*x + 5/6 over Rational Field
+    Z-coordinate is optional, assume it is 1 then::
+        sage: xP = KummerPoint(K, 95); xP
+        Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+    Or, it can be constructed from a point on the elliptic curve::
+        sage: xP = KummerPoint(K, P); xP
+        Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
+
+    The point can also be created by calling the Kummer line::
+        sage: xP = K(P); xP
+        Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
     """
 
     def __init__(self, parent, coords):
@@ -428,6 +437,8 @@ class KummerPoint:
         Create a point from the coordinates.
 
         INPUT::
+
+            - ``parent`` - A Kummer line
 
             - ``coords`` - either a point P on EllipticCurve or a list or tuple (X, Z) where P = (X : * : Z); Z is optional
 
@@ -438,18 +449,18 @@ class KummerPoint:
             sage: K = KummerLine(E)
 
         Point as a parameter::
-            sage: K(P)
+            sage: xP = KummerPoint(K, [95, 1]); xP
             Kummer Point [95 : 1] on Kummer line of the elliptic curve y^2 = x^3 + 2*x + 3 over Finite Field of size 101
 
         Same output if we just give the XZ-coordinates::
-            sage: K([95, 1]) == K(P)
+            sage: KummerPoint(K, [95, 1]) == KummerPoint(K, P)
             True
 
         Z is optional::
-            sage: K(95) == K(P)
+            sage: KummerPoint(K, 95) == KummerPoint(K, P)
             True
 
-            sage: K([95]) == K(P)
+            sage: KummerPoint(K, [95]) == KummerPoint(K, P)
             True
         """
         # Ensure the parent is the right type
@@ -481,29 +492,86 @@ class KummerPoint:
             raise ValueError("not a point on ℙ¹")
         coords = tuple(map(pari, map(R, coords)))
 
-        # TODO: we should make sure the coordinates
-        #       are on the curve!
-        # Write something like `parent.is_x_coord(X, Z)`
-        # which checks if x^3 + A*x^2 + x is a square in
-        # the base field...
         self._base_ring = R
         self._parent = parent
         self._X, self._Z = coords
 
+        # TODO does not consider a potential twist of the curve
+        # TODO broken
+        # if not self.is_x_coord():
+        #     raise ValueError("Not a valid x-coordinate")
+
     def __repr__(self):
-        return f"Kummer Point [{self._X.sage()} : {self._Z.sage()}] on {self._parent}"
+        r"""
+        String representation of a point on a Kummer line.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P); xP.__repr__()
+            TODO
+        """
+        return f"Kummer Point [{self._X.sage()} : {self._Z.sage()}] on {self.parent()}"
 
     def __bool__(self):
+        r"""
+        Boolean value for a Kummer line point.
+
+        It represents False if it is the point at infinity and True otherwise
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xO = K(None)
+            sage: xO == False
+            True
+
+            sage: xP = K(P)
+            sage: xP == True
+            True
         """
-        A point represents False if it is the point at infinity and
-        True otherwise
-        """
+
         return bool(self._Z)
 
     def __eq__(self, other):
+        r"""
+        Equality of two Kummer points.
+
+        They are equal if the above line match and if the projective points are the same.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: K = KummerLine(E)
+
+        Two points can have different coordinates and still be the same projectively::
+            sage: P = E(95, 49)
+            sage: xP1 = K(P)
+            sage: xP2 = K([29, 12])
+            sage: xP1 == xP2  # 95*12 % 101 = 29
+            True
+
+        They must represent the same x-coordinate::
+            sage: P = E(95, 49)
+            sage: Q = E(, ) TODO
+            sage: xP, xQ = K(P), K(Q)
+            sage: xP == xQ
+            False
+
+        Base Kummer line must be the same even if the x-coordinates are equal::
+            sage: E2 = EllipticCurve(GF(101), [3, 4])
+            sage: P2 = E2(95, ) TODO
+            sage: K2 = KummerLine(E2)
+            sage: xP1 = K(P)
+            sage: xP2 = K2(P2)
+            sage: xP == xP2
+            False
         """
-        Equality of two Kummer Points
-        """
+
         if not isinstance(other, KummerPoint):
             raise ValueError("Can only compare equality between to Kummer Points")
         if self._parent != other._parent:
@@ -511,33 +579,113 @@ class KummerPoint:
         return self._X * other._Z == other._X * self._Z
 
     def is_zero(self):
+        r"""
+        A Kummer Point is zero if it corresponds to the point at infinity
+        on the parent curve.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P); xP.is_zero()
+
+            sage: xO = K(None); xO.is_zero()
+            True
         """
-        A Kummer Point is considered Zero if it is the identity point
-        on the parent curve
-        """
+
         return self._Z == 0
 
+    def is_x_coord(self):
+        r"""
+        Check if the x coordinate of a Kummer Point is a valid
+        one on the parent curve.
+
+        False should never be encountered as an error is raised on initialisation if so.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(95); xP.is_x_coord()
+            True
+        """
+
+        if self.is_zero():
+            return True
+        return self._parent.curve().is_x_coord(self.x())
+
     def base_ring(self):
+        r"""
+        Return the base ring of the Kummer Point.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P)
+            sage: xP.base_ring()
+            Finite Field of size 101
         """
-        Get the base ring of the Kummer Point coordinates
-        """
+
         return self._base_ring
 
     def parent(self):
+        r"""
+        Return the Kummer line on which the point is constructed.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P)
+            sage: xP.parent()
+            TODO
         """
-        Get the Kummer Line of which this point is constructed on
-        """
+
         return self._parent
 
     def XZ(self):
+        r"""
+        Return the projective coordinates (X : Z) of the point.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P)
+            sage: xP.XZ()
+            (95, 1)
         """
-        Return the projective (X : Z) coordinates of the point
-        """
+
         return self._X, self._Z
 
     def x(self):
-        r""" """
-        if not self._Z:
+        r"""
+        Return the affine x-coordinate of the point, if well-defined.
+
+        Raise an error on the point at infinity.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P)
+            sage: xP.x()
+            95
+
+        The point at infinity has no valid x-coordinate::
+            sage: xO = K(None)
+            sage: xO.x()
+            TODO
+        """
+
+        if self.is_zero():
             raise ValueError("The identity point has no valid x-coordinate")
         if self._Z == 1:
             return self._base_ring(self._X)
@@ -545,25 +693,30 @@ class KummerPoint:
 
     @cached_method
     def curve_point(self):
-        """
-        Deterministically lift an x-coordinate
-        taking the smallest y-coordinate as the
-        chosen root.
+        r"""
+        Return a lift of the point on the parent curve.
+        y is chose as the smallest square root.
+
+        EXAMPLES::
+
+            sage: E = EllipticCurve(GF(101), [2, 3])
+            sage: P = E(95, 49)
+            sage: K = KummerLine(E)
+            sage: xP = K(P)
+            sage: xP.curve_point()
+            TODO
         """
         # Get the Montgomery curve and constant A
         L = self.parent()
         E = L.curve()
         a, b = L._a, L._b
 
+        # TODO change to lift_x
         # Compute y2, assume x is a valid coordinate
         x = self.x()
         y2 = x**3 + a * x + b
         y = y2.sqrt()
         return E(x, y)
-
-    # =================================== #
-    # Addition and multiplication helpers #
-    # =================================== #
 
     @staticmethod
     def xDBL(X, Z, a, b2, b4):
