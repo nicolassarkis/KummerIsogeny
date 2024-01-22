@@ -1,5 +1,5 @@
 from kummer_line import KummerLine  # noqa
-from sage.all import EllipticCurve, GF, randint  # noqa
+from sage.all import EllipticCurve, GF, randint, Integer  # noqa
 from benchmark_utils import compare_isogeny  # noqa
 
 
@@ -42,42 +42,42 @@ from benchmark_utils import compare_isogeny  # noqa
 p = 65537
 F = GF(p)
 
-c = 0
-flag = True
-
-while c < 2000 and flag:
-    A = F.random_element()
-    B = F.random_element()
-    E = EllipticCurve(F, [A, B])
-    N = E.order()
-
-    P0 = E.gens()[0]
-    while P0.order() == N:
-        A = F.random_element()
-        B = F.random_element()
-        E = EllipticCurve(F, [A, B])
-        N = E.order()
-        P0 = E.gens()[0]
-
-    K = KummerLine(E)
-    k = P0.order().divisors()[1:][randint(0, len(P0.order().divisors()) - 2)]
-    P = P0.order() / k * P0
-    assert P.order() == k
-
-    ker = [E(0)]
-    for _ in range(P.order() - 1):
-        ker += [ker[-1] + P]
-
-    Q = E.random_point()
-    while Q in ker:
-        Q = E.random_point()
-    xP = K(P)
-    xQ = K(Q)
-
-    flag = compare_isogeny(P, Q, xP, xQ, k)
-    c += 1
-    if c % 100 == 0:
-        print(c)
+# c = 0
+# flag = True
+#
+# while c < 2000 and flag:
+#     A = F.random_element()
+#     B = F.random_element()
+#     E = EllipticCurve(F, [A, B])
+#     N = E.order()
+#
+#     P0 = E.gens()[0]
+#     while P0.order() == N:
+#         A = F.random_element()
+#         B = F.random_element()
+#         E = EllipticCurve(F, [A, B])
+#         N = E.order()
+#         P0 = E.gens()[0]
+#
+#     K = KummerLine(E)
+#     k = P0.order().divisors()[1:][randint(0, len(P0.order().divisors()) - 2)]
+#     P = P0.order() / k * P0
+#     assert P.order() == k
+#
+#     ker = [E(0)]
+#     for _ in range(P.order() - 1):
+#         ker += [ker[-1] + P]
+#
+#     Q = E.random_point()
+#     while Q in ker:
+#         Q = E.random_point()
+#     xP = K(P)
+#     xQ = K(Q)
+#
+#     flag = compare_isogeny(P, Q, xP, xQ, k)
+#     c += 1
+#     if c % 100 == 0:
+#         print(c)
 
 # A = F.random_element()
 # B = F.random_element()
@@ -112,3 +112,12 @@ while c < 2000 and flag:
 # print(xP)
 # print(2 * xP)
 # print(xP.double())
+
+E = EllipticCurve(F, [60860, 10913])
+K = KummerLine(E)
+P = E.lift_x(Integer(0))
+xP = K(P)
+print(xP)
+print("aa", xP.xDBLADD(0, 1, 1, 0, 0, 1, 60860, 43652))
+print(2 * xP)
+print(xP.double().x() == (2 * P)[0])

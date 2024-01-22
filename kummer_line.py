@@ -390,6 +390,8 @@ class KummerLine:
             if (2 * Q).is_zero():
                 # # print((2 * Q).x(), (Q.double().x()))
                 # print(type(2 * Q), 2 * Q)
+                # DEBUG
+                print(Q)
                 print(Q.double(), Q.double().is_zero())
                 print(2 * Q, (2 * Q).is_zero())
                 vQ = gQx
@@ -789,10 +791,50 @@ class KummerPoint:
 
         Cost: 8M + 4S + 8A
         """
-        XX = XP**2
-        ZZ = ZP**2
+        # TODO there is a weird edge case with these formulas if P = (0 : 1) and Q = (1 : 0)
+        # XX = XP**2
+        # ZZ = ZP**2
+        # aZZ = a * ZZ
+        # t0 = XP + ZP
+        # t1 = t0**2
+        # t2 = t1 - XX
+        # E = t2 - ZZ
+        # t3 = XX - aZZ
+        # t4 = t3**2
+        # t5 = E * ZZ
+        # t6 = b4 * t5
+        # X2P = t4 - t6
+        # t7 = XX + aZZ
+        # t8 = ZZ**2
+        # t9 = b4 * t8
+        # t10 = E * t7
+        # t11 = t10 + t10
+        # Z2P = t11 + t9
+        # A = XP * XQ
+        # B = ZP * ZQ
+        # C = XP * ZQ
+        # D = XQ * ZP
+        # t12 = a * B
+        # t13 = A - t12
+        # t14 = C + D
+        # t15 = t13**2
+        # t16 = B * t14
+        # t17 = b4 * t16
+        # t18 = t15 - t17
+        # XQP = zPQ * t18
+        # t19 = C - D
+        # t20 = t19**2
+        # ZQP = xPQ * t20
+        # print(XQP, ZQP)
+
+        X1, Z1 = xPQ, zPQ
+        X2, Z2 = XP, ZP
+        X3, Z3 = XQ, ZQ
+
+        XX = X2**2
+        ZZ = Z2**2
         aZZ = a * ZZ
-        t0 = XP + ZP
+        t0 = X2 + Z2
         t1 = t0**2
         t2 = t1 - XX
         E = t2 - ZZ
@@ -800,28 +842,34 @@ class KummerPoint:
         t4 = t3**2
         t5 = E * ZZ
         t6 = b4 * t5
-        X2P = t4 - t6
+        X4 = t4 - t6
         t7 = XX + aZZ
         t8 = ZZ**2
         t9 = b4 * t8
         t10 = E * t7
-        t11 = t10 + t10
-        Z2P = t11 + t9
-        A = XP * XQ
-        B = ZP * ZQ
-        C = XP * ZQ
-        D = XQ * ZP
+        t11 = 2 * t10
+        Z4 = t11 + t9
+        A = X2 * X3
+        B = Z2 * Z3
+        C = X2 * Z3
+        D = X3 * Z2
         t12 = a * B
-        t13 = A - t12
-        t14 = C + D
-        t15 = t13**2
-        t16 = B * t14
-        t17 = b4 * t16
-        t18 = t15 - t17
-        XQP = zPQ * t18
+        t13 = C + D
+        t14 = A + t12
+        t15 = B**2
+        t16 = b4 * t15
+        t17 = t13 * t14
+        t18 = 2 * t17
+        R = t18 + t16
         t19 = C - D
-        t20 = t19**2
-        ZQP = xPQ * t20
+        S = t19**2
+        t20 = S * X1
+        t21 = R * Z1
+        X5 = t21 - t20
+        Z5 = S * Z1
+
+        X2P, Z2P = X4, Z4
+        XQP, ZQP = X5, Z5
 
         return X2P, Z2P, XQP, ZQP
 
@@ -940,7 +988,7 @@ class KummerPoint:
         XP, ZP = self.XZ()
 
         # Initialise for loop
-        X0, Z0 = R.one(), R.zero()
+        X0, Z0 = R(1), R(0)
         X1, Z1 = XP, ZP
 
         # Converting parameters for projective DBLADD -> (A24:C24)=(A+2C:4C)
@@ -952,12 +1000,17 @@ class KummerPoint:
         # C24 = pari(A24 + A24)
         # A24 = pari(A24 + A)
 
+        print(a, b4)
         # Montgomery-ladder
         for bit in bin(m)[2:]:
+            print(X0, Z0, X1, Z1)
             if bit == "0":
+                print(0)
                 X0, Z0, X1, Z1 = self.xDBLADD(X0, Z0, X1, Z1, XP, ZP, a, b4)
             else:
+                print(1)
                 X1, Z1, X0, Z0 = self.xDBLADD(X1, Z1, X0, Z0, XP, ZP, a, b4)
+        print(X0, Z0, X1, Z1)
 
         return self._parent((X0, Z0))
 
