@@ -391,9 +391,9 @@ class KummerLine:
                 # # print((2 * Q).x(), (Q.double().x()))
                 # print(type(2 * Q), 2 * Q)
                 # DEBUG
-                print(Q)
-                print(Q.double(), Q.double().is_zero())
-                print(2 * Q, (2 * Q).is_zero())
+                # print(Q)
+                # print(Q.double(), Q.double().is_zero())
+                # print(2 * Q, (2 * Q).is_zero())
                 vQ = gQx
             else:
                 vQ = 2 * gQx
@@ -1000,17 +1000,12 @@ class KummerPoint:
         # C24 = pari(A24 + A24)
         # A24 = pari(A24 + A)
 
-        print(a, b4)
         # Montgomery-ladder
         for bit in bin(m)[2:]:
-            print(X0, Z0, X1, Z1)
             if bit == "0":
-                print(0)
                 X0, Z0, X1, Z1 = self.xDBLADD(X0, Z0, X1, Z1, XP, ZP, a, b4)
             else:
-                print(1)
                 X1, Z1, X0, Z0 = self.xDBLADD(X1, Z1, X0, Z0, XP, ZP, a, b4)
-        print(X0, Z0, X1, Z1)
 
         return self._parent((X0, Z0))
 
