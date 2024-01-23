@@ -545,6 +545,10 @@ class KummerPoint:
 
         They are equal if the above line match and if the projective points are the same.
 
+        INPUT::
+
+            - ``other`` - A Kummer point
+
         EXAMPLES::
 
             sage: E = EllipticCurve(GF(101), [2, 3])
@@ -722,13 +726,22 @@ class KummerPoint:
 
     @staticmethod
     def xDBL(X, Z, a, b2, b4):
-        """
-        function for Montgomery doubling with projective curve constant
+        r"""
+        Doubling formula for x-only coordinate on short Weierstrass curve.
 
-        Input:  projective point P = (X:Z), curve constants (A:C)
-        Output: projective point [2]P = (X2:Z2)
+        Cost: 2M + 5S + 3m0 + 8a
 
-        Cost: 4M + 2S + 8a
+        INPUT::
+
+            - ``X``, ``Z`` -- the coordinates of the Kummer point `P = (X : Z)`
+
+            - ``a``, ``b2``, ``b4`` -- curve constants where `b2 = 2*b` and `b4 = 4*b`
+
+        OUTPUT:: The coordinates of `[2]P = (X2 : Z2)`
+
+        EXAMPLES::
+
+            TODO
         """
 
         XX = X * X
@@ -747,15 +760,26 @@ class KummerPoint:
 
     @staticmethod
     def xADD(XP, ZP, XQ, ZQ, xPQ, zPQ, a, b):
-        """
-        function for Montgomery differential addition
+        r"""
+        Differential addition formula formula for x-only coordinate on short Weierstrass curve.
 
-        Input:  projective coordinates P = (XP : ZP),
-                Q=(XQ : ZQ), and their difference
-                x(P-Q) = (xPQ : zPQ)
-        Output: coordinates of sum P + Q = (XQP : ZQP)
+        Cost: 7M + 2S + 2m0 + 6a
 
-        Cost: 4M + 2S + 6a
+        INPUT::
+
+            - ``XP``, ``ZP`` -- the coordinates of the Kummer point `x(P) = (XP : ZP)`
+
+            - ``XQ``, ``ZQ`` -- the coordinates of the Kummer point `x(Q) = (XQ : ZQ)`
+
+            - ``xPQ``, ``zPQ`` -- the coordinates of the Kummer point `x(P-Q) = (xPQ : zPQ)`
+
+            - ``a``, ``b`` -- curve constants
+
+        OUTPUT:: The coordinates of `x(P+Q) = (XQP : ZQP)`
+
+        EXAMPLES::
+
+            TODO
         """
         T1 = XP * XQ
         T2 = ZP * ZQ
@@ -779,18 +803,28 @@ class KummerPoint:
 
     @staticmethod
     def xDBLADD(XP, ZP, XQ, ZQ, xPQ, zPQ, a, b4):
-        """
-        function for step in Montgomery ladder
-        simultaneous doubling and differential addition
+        r"""
+        Used in Montgomery ladder to do simultaneously doubling and differential addition.
 
-        Input: projective coordinates P=(XP:ZP) and Q=(XQ:ZQ),
-               projective difference P-Q=(xPQ:zPQ) and
-               curve constant A24/C24=(A+2C)/4C.
-        Output: projective coordinates of 2P=(X2P:Z2P)
-                and Q+P=(XQP:ZQP)
+        Cost: TODO
 
-        Cost: 8M + 4S + 8A
+        INPUT::
+
+            - ``XP``, ``ZP`` -- the coordinates of the Kummer point `x(P) = (XP : ZP)`
+
+            - ``XQ``, ``ZQ`` -- the coordinates of the Kummer point `x(Q) = (XQ : ZQ)`
+
+            - ``xPQ``, ``zPQ`` -- the coordinates of the Kummer point `x(P-Q) = (xPQ : zPQ)`
+
+            - ``a``, ``b4`` -- curve constants where `b4 = 4*b`
+
+        OUTPUT:: The coordinates of `x(2P) = (X2P : Z2P)` and `x(P+Q) = (XQP : ZQP)`
+
+        EXAMPLES::
+
+            TODO
         """
+
         # TODO there is a weird edge case with these formulas if P = (0 : 1) and Q = (1 : 0)
         # XX = XP**2
         # ZZ = ZP**2
@@ -873,13 +907,8 @@ class KummerPoint:
 
         return X2P, Z2P, XQP, ZQP
 
-    # =================================== #
-    # Addition and multiplication methods #
-    # =================================== #
     def _double(self):
-        """
-        Returns [2] self
-        """
+        r""" """
         X, Z = self.XZ()
         a, b = self._parent.extract_constants()
         b2 = b + b
@@ -888,9 +917,7 @@ class KummerPoint:
         return self._parent((X2, Z2))
 
     def _double_iter(self, n):
-        """
-        Returns [2^k] self
-        """
+        r""" """
         X, Z = self.XZ()
         a, b = self._parent.extract_constants()
         b2 = b + b
